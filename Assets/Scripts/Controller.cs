@@ -21,6 +21,7 @@ public class Controller : MonoBehaviour
     private int clickedTile = -1;
     private int clickedCop = 0;
     Dictionary<Tile, List<int>> robberDistance = new Dictionary<Tile, List<int>>();
+    public GameObject letrero;
 
 
     void Start()
@@ -28,8 +29,11 @@ public class Controller : MonoBehaviour
         InitTiles();
         InitAdjacencyLists();
         state = Constants.Init;
+        playAgainButton.interactable = true;
+        letrero.SetActive(false);
+
     }
-        
+
     //Rellenamos el array de casillas y posicionamos las fichas
     void InitTiles()
     {
@@ -200,7 +204,6 @@ public class Controller : MonoBehaviour
             clickedTile = cops[i].GetComponent<CopMove>().currentTile;
             tiles[clickedTile].current = true;
 
-            // Update after each cop
             ResetTiles();
             FindSelectableTiles(true);
         }
@@ -210,14 +213,14 @@ public class Controller : MonoBehaviour
 
         foreach (Tile t in robberDistance.Keys)
         {
-            // Pick the one that's the furthest from them all
+
             if (robberDistance[t].Sum() > maxDistance)
             {
                 finalTile = t;
                 maxDistance = robberDistance[t].Sum();
             }
 
-            // Otherwise, pick the one with the largest distance numbers
+
             else if (robberDistance[t].Sum() == maxDistance)
             {
                 bool isFurther = true;
@@ -242,18 +245,24 @@ public class Controller : MonoBehaviour
         - Movemos al caco a esa casilla
         - Actualizamos la variable currentTile del caco a la nueva casilla
         */
-        //robber.GetComponent<RobberMove>().MoveToTile(tiles[robber.GetComponent<RobberMove>().currentTile]);
 
     }
 
     public void EndGame(bool end)
     {
-        if(end)
+        if (end)
+        {
             finalMessage.text = "You Win!";
+            playAgainButton.interactable = true;
+            letrero.SetActive(true);
+        }
         else
+        {
             finalMessage.text = "You Lose!";
-        playAgainButton.interactable = true;
-        state = Constants.End;
+            letrero.SetActive(true);
+            playAgainButton.interactable = true;
+            state = Constants.End;
+        }
     }
 
     public void PlayAgain()
@@ -264,8 +273,8 @@ public class Controller : MonoBehaviour
                 
         ResetTiles();
 
-        playAgainButton.interactable = false;
         finalMessage.text = "";
+        letrero.SetActive(false);
         roundCount = 0;
         rounds.text = "Rounds: ";
 
@@ -363,6 +372,10 @@ public class Controller : MonoBehaviour
             && t.distance <= Constants.Distance && t.distance > 0)
             {
                 t.selectable = true;
+            }
+            if (cop && robberDistance.ContainsKey(t) && robberDistance.Count > 0)
+            {
+                robberDistance[t].Add(t.distance);
             }
         }
 
