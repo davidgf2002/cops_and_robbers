@@ -52,10 +52,49 @@ public class Controller : MonoBehaviour
         int[,] matriu = new int[Constants.NumTiles, Constants.NumTiles];
 
         //TODO: Inicializar matriz a 0's
+        for (int i = 0; i < Constants.NumTiles; ++i)
+        {
+        for (int j = 0; j < Constants.NumTiles; ++j)
+        {
+            matriu[i, j] = 0;
+        }
+        }
 
         //TODO: Para cada posición, rellenar con 1's las casillas adyacentes (arriba, abajo, izquierda y derecha)
+        for (int i = 0; i < Constants.NumTiles; ++i)
+        {
+            // Arriba
+            if (i > 7) { 
+                matriu[i, i - 8] = 1; 
+            }
+
+            // Abajo
+            if (i < 56) {
+                matriu[i, i + 8] = 1; 
+            }
+
+            // Derecha
+            if ( ( (i + 1) % 8) != 0) { 
+                matriu[i, i + 1] = 1; 
+            }
+
+            // Izquierda
+            if (i % 8 != 0) {
+                matriu[i, i - 1] = 1; 
+            }
+        }
 
         //TODO: Rellenar la lista "adjacency" de cada casilla con los índices de sus casillas adyacentes
+        for (int i = 0; i < Constants.NumTiles; ++i)
+        {
+            for (int j = 0; j < Constants.NumTiles; ++j)
+            {
+                if (matriu[i, j] == 1)
+                {
+                    tiles[i].adjacency.Add(j);
+                }
+            }
+        }
 
     }
 
@@ -198,15 +237,74 @@ public class Controller : MonoBehaviour
 
         //La ponemos rosa porque acabamos de hacer un reset
         tiles[indexcurrentTile].current = true;
+        tiles[indexcurrentTile].visited = true;
+
+
+        //Lista posiciones demas policias
+        List<int> indices = new List<int>();
+        foreach (GameObject c in cops)
+        {
+            indices.Add(c.GetComponent<CopMove>().currentTile);
+        }
+
+
+        //TODO: Implementar BFS. Los nodos seleccionables los ponemos como selectable=false
+        foreach (Tile t in tiles)
+        {
+            t.selectable = false;
+        }
+
 
         //Cola para el BFS
         Queue<Tile> nodes = new Queue<Tile>();
 
+        foreach (Tile t in tiles)
+        {
+            t.selectable = false;
+        };
+
+        foreach (int i in tiles[indexcurrentTile].adjacency)
+        {
+            tiles[i].parent = tiles[indexcurrentTile];
+            nodes.Enqueue(tiles[i]);
+        }
+
+        while (nodes.Count > 0)
+        {
+            Tile curr = nodes.Dequeue();
+            if (!curr.visited)
+            {
+                if (indices.Contains(curr.numTile))
+                {
+                    curr.distance = curr.parent.distance + 1;
+                    curr.visited = true;
+                }
+                else
+                {
+                    foreach (int i in curr.adjacency)
+                    {
+                        if (!tiles[i].visited)
+                        {
+                            tiles[i].parent = curr;
+                            nodes.Enqueue(tiles[i]);
+                        }
+                    }
+
+                    curr.visited = true;
+                    curr.distance = curr.parent.distance + 1;
+                }
+            }
+        }
+
         //TODO: Implementar BFS. Los nodos seleccionables los ponemos como selectable=true
         //Tendrás que cambiar este código por el BFS
-        for(int i = 0; i < Constants.NumTiles; i++)
+        foreach (Tile t in tiles)
         {
-            tiles[i].selectable = true;
+            if (!indices.Contains(t.numTile)
+            && t.distance <= Constants.Distance && t.distance > 0)
+            {
+                t.selectable = true;
+            }
         }
 
 
