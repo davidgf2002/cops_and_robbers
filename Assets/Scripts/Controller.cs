@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,7 +20,9 @@ public class Controller : MonoBehaviour
     private int state;
     private int clickedTile = -1;
     private int clickedCop = 0;
-                    
+    Dictionary<Tile, List<int>> robberDistance = new Dictionary<Tile, List<int>>();
+
+
     void Start()
     {        
         InitTiles();
@@ -175,16 +178,72 @@ public class Controller : MonoBehaviour
 
     public void RobberTurn()
     {
-        clickedTile = robber.GetComponent<RobberMove>().currentTile;
+        RobberMove robberMove = robber.GetComponent<RobberMove>();
+        clickedTile = robberMove.currentTile;
         tiles[clickedTile].current = true;
         FindSelectableTiles(false);
 
+
+        //Agregar casillas seleccionables al diccionario
+        robberDistance.Clear();
+        foreach (Tile t in tiles)
+        {
+            if (t.selectable)
+            {
+                robberDistance.Add(t, new List<int>());
+            }
+        }
+
+        for (int i = 0; i < cops.Length; ++i)
+        {
+            clickedCop = i;
+            clickedTile = cops[i].GetComponent<CopMove>().currentTile;
+            tiles[clickedTile].current = true;
+
+            // Update after each cop
+            ResetTiles();
+            FindSelectableTiles(true);
+        }
+
+        int maxDistance = 0;
+        Tile finalTile = new Tile();
+
+        foreach (Tile t in robberDistance.Keys)
+        {
+            // Pick the one that's the furthest from them all
+            if (robberDistance[t].Sum() > maxDistance)
+            {
+                finalTile = t;
+                maxDistance = robberDistance[t].Sum();
+            }
+
+            // Otherwise, pick the one with the largest distance numbers
+            else if (robberDistance[t].Sum() == maxDistance)
+            {
+                bool isFurther = true;
+                foreach (int d in robberDistance[t])
+                {
+                    if (d < robberDistance[finalTile][0]
+                    && d < robberDistance[finalTile][1])
+                    {
+                        isFurther = false;
+                    }
+                }
+
+                if (isFurther) { finalTile = t; }
+            }
+        }
+
+        ResetTiles();
+        robberMove.currentTile = finalTile.numTile;
+        robberMove.MoveToTile(finalTile);
         /*TODO: Cambia el código de abajo para hacer lo siguiente
         - Elegimos una casilla aleatoria entre las seleccionables que puede ir el caco
         - Movemos al caco a esa casilla
         - Actualizamos la variable currentTile del caco a la nueva casilla
         */
-        robber.GetComponent<RobberMove>().MoveToTile(tiles[robber.GetComponent<RobberMove>().currentTile]);
+        //robber.GetComponent<RobberMove>().MoveToTile(tiles[robber.GetComponent<RobberMove>().currentTile]);
+
     }
 
     public void EndGame(bool end)
